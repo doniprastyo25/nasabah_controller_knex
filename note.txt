@@ -1,0 +1,75 @@
+(knex.js)
+
+const knex = require('knex')
+const connectedKnex = knex({
+	client: "sqlite3",
+	connection: {
+		filename: "cars.sqlite3"
+}
+	
+});
+
+module.exports = connectedKnex;
+
+(cars.js)
+
+const knex = require("./knex");
+
+function createCar(car) {
+	return knex("cars").insert(car);
+	
+}
+
+function getAllCars() {
+	return knex("cars").select('*')
+}
+
+function deleteCar(id) {
+	return knex("cars").where("id", id).del();
+}
+
+function updateCar(id, car) {
+	return knex("cars").where("id", id).update(car)
+}
+
+module.exports = {
+	createCar,
+	getAllCars,
+	deleteCar,
+	updateCar
+}
+
+(server.js)
+
+const bodyParser = require('body-parser');
+const db = require("./db/cars");
+
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json());
+
+//create data
+
+app.post('/cars', async(req, res)=>{
+	const results = await db.createCar(req.body);
+	req.status(201).json({id : results[0]})
+});
+
+//get data
+
+app.get('/cars', async(req, res)=>{
+	const cars = await db.getAllCars();
+	req.status(200).json({ cars })
+});
+
+//update data
+
+app.patch('/cars/:id', async (req, res)=>{
+	const id = await db.updateCar(req.params.id, req.params.body)
+})
+
+//delete data
+
+app.patch('/cars/:id', async()=>{
+	await db.deleteCar(req.params.id);
+	res.status(200).json({success: true})
+}) 
